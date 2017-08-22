@@ -1,9 +1,3 @@
-<img src="https://github.com/ethdex/branding/blob/master/Icon_Black_CMYK.png" width="120px" >
-
----
-
-[Ethdex][website-url] is an open protocol that facilitates trustless, low friction exchange of Ethereum-based assets. A full description of the protocol may be found in our [whitepaper][whitepaper-url]. This repository contains the system of Ethereum smart contracts comprising Ethdex protocol's shared on-chain settlement layer, native token (DEX) and decentralized governance structure. Truffle is used for deployment. Mocha is used for unit tests.
-
 [website-url]: https://ethdex.io
 [whitepaper-url]: https://ethdex.io/white_paper.pdf
 

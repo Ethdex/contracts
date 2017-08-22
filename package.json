@@ -32,23 +32,27 @@
     "@types/request-promise-native": "^1.0.2",
     "copyfiles": "^1.2.0",
     "dirty-chai": "^2.0.0",
-    "solc": "^0.4.11",
     "ethereumjs-testrpc": "4.0.1",
+    "solc": "^0.4.11",
     "truffle": "3.4.3",
     "typescript": "^2.2.2",
     "web3-typescript-typings": "0.0.3"
   },
   "dependencies": {
     "bignumber.js": "^4.0.0",
+    "bip39": "^2.4.0",
     "bluebird": "^3.5.0",
     "bn.js": "^4.11.6",
     "es6-promisify": "^5.0.0",
     "ethereumjs-abi": "^0.6.4",
     "ethereumjs-util": "^5.1.1",
+    "ethereumjs-wallet": "^0.6.0",
     "lodash": "^4.17.4",
     "request": "^2.81.0",
     "request-promise-native": "^1.0.3",
     "tslint": "^4.5.1",
-    "tslint-config-0xproject": "^0.0.2"
+    "tslint-config-0xproject": "^0.0.2",
+    "web3": "^1.0.0-beta.18",
+    "web3-provider-engine": "^13.2.9"
   }
 }
