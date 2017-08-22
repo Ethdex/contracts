@@ -17,7 +17,8 @@ module.exports = (deployer: any) => {
   .then((instances: ContractInstance[]) => {
     let tokenRegistry: ContractInstance;
     [tokenTransferProxy, tokenRegistry] = instances;
-    return tokenRegistry.getTokenAddressBySymbol('ZRX');
+    //return tokenRegistry.getTokenAddressBySymbol('EDX');
+    return tokenRegistry.getTokenAddressBySymbol('WETH');
   })
   .then((ptAddress: string) => {
     return deployer.deploy(Exchange, ptAddress, tokenTransferProxy.address);

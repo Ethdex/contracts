@@ -49,7 +49,7 @@ contract('Exchange', (accounts: string[]) => {
     const [repAddress, dgdAddress, zrxAddress] = await Promise.all([
       tokenRegistry.getTokenAddressBySymbol('REP'),
       tokenRegistry.getTokenAddressBySymbol('DGD'),
-      tokenRegistry.getTokenAddressBySymbol('ZRX'),
+      tokenRegistry.getTokenAddressBySymbol('EDX'),
     ]);
 
     const defaultOrderParams = {

@@ -11,6 +11,13 @@ export const tokenInfo: TokenInfoByNetwork = {
       swarmHash: constants.NULL_BYTES,
     },
     {
+      name: 'Ethdex Token',
+      symbol: 'EDX',
+      decimals: 18,
+      ipfsHash: constants.NULL_BYTES,
+      swarmHash: constants.NULL_BYTES,
+    },
+    {
       name: 'Augur Reputation Token',
       symbol: 'REP',
       decimals: 18,

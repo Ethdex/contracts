@@ -92,7 +92,7 @@ contract('TokenSale', (accounts: string[]) => {
       TokenRegistry.deployed(),
     ]);
     [zrxAddress, wEthAddress, invalidTokenAddress] = await Promise.all([
-      tokenRegistry.getTokenAddressBySymbol('ZRX'),
+      tokenRegistry.getTokenAddressBySymbol('EDX'),
       tokenRegistry.getTokenAddressBySymbol('WETH'),
       tokenRegistry.getTokenAddressBySymbol('REP'),
     ]);

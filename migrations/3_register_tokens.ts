@@ -5,7 +5,7 @@ import { Artifacts } from '../util/artifacts';
 const {
   DummyToken,
   EtherToken,
-  ZRXToken,
+  EDXToken,
   TokenRegistry,
 } = new Artifacts(artifacts);
 import { tokenInfo } from './config/token_info';
@@ -53,11 +53,11 @@ module.exports = (deployer: any, network: string) => {
       )), _.noop);
       });
     } else {
-      const zrx = {
-        address: ZRXToken.address,
-        name: '0x Protocol Token',
-        symbol: 'ZRX',
-        url: 'https://www.0xproject.com/',
+      const edx = {
+        address: EDXToken.address,
+        name: 'Ethdex Token',
+        symbol: 'EDX',
+        url: 'https://ethdex.io/',
         decimals: 18,
         ipfsHash: constants.NULL_BYTES,
         swarmHash: constants.NULL_BYTES,
@@ -72,12 +72,12 @@ module.exports = (deployer: any, network: string) => {
           token.swarmHash,
         );
       }).concat(tokenRegistry.addToken(
-        zrx.address,
-        zrx.name,
-        zrx.symbol,
-        zrx.decimals,
-        zrx.ipfsHash,
-        zrx.swarmHash,
+        edx.address,
+        edx.name,
+        edx.symbol,
+        edx.decimals,
+        edx.ipfsHash,
+        edx.swarmHash,
     )), _.noop);
     }
   });

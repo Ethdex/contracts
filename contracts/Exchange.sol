@@ -37,7 +37,7 @@ contract Exchange is SafeMath {
     string constant public VERSION = "1.0.0";
     uint16 constant public EXTERNAL_QUERY_GAS_LIMIT = 4999;    // Changes to state require at least 5000 gas
 
-    address public ZRX_TOKEN_CONTRACT;
+    address public WETH_TOKEN_CONTRACT;
     address public TOKEN_TRANSFER_PROXY_CONTRACT;
 
     // Mappings of orderHash => amounts of takerTokenAmount filled or cancelled.
@@ -85,8 +85,8 @@ contract Exchange is SafeMath {
         bytes32 orderHash;
     }
 
-    function Exchange(address _zrxToken, address _tokenTransferProxy) {
-        ZRX_TOKEN_CONTRACT = _zrxToken;
+    function Exchange(address _wethToken, address _tokenTransferProxy) {
+        WETH_TOKEN_CONTRACT = _wethToken;
         TOKEN_TRANSFER_PROXY_CONTRACT = _tokenTransferProxy;
     }
 
@@ -180,7 +180,7 @@ contract Exchange is SafeMath {
             if (order.makerFee > 0) {
                 paidMakerFee = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.makerFee);
                 require(transferViaTokenTransferProxy(
-                    ZRX_TOKEN_CONTRACT,
+                    WETH_TOKEN_CONTRACT,
                     order.maker,
                     order.feeRecipient,
                     paidMakerFee
@@ -189,7 +189,7 @@ contract Exchange is SafeMath {
             if (order.takerFee > 0) {
                 paidTakerFee = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.takerFee);
                 require(transferViaTokenTransferProxy(
-                    ZRX_TOKEN_CONTRACT,
+                    WETH_TOKEN_CONTRACT,
                     msg.sender,
                     order.feeRecipient,
                     paidTakerFee
@@ -548,23 +548,23 @@ contract Exchange is SafeMath {
         uint fillMakerTokenAmount = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount);
 
         if (order.feeRecipient != address(0)) {
-            bool isMakerTokenZRX = order.makerToken == ZRX_TOKEN_CONTRACT;
-            bool isTakerTokenZRX = order.takerToken == ZRX_TOKEN_CONTRACT;
+            bool isMakerTokenWETH = order.makerToken == WETH_TOKEN_CONTRACT;
+            bool isTakerTokenWETH = order.takerToken == WETH_TOKEN_CONTRACT;
             uint paidMakerFee = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.makerFee);
             uint paidTakerFee = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.takerFee);
-            uint requiredMakerZRX = isMakerTokenZRX ? safeAdd(fillMakerTokenAmount, paidMakerFee) : paidMakerFee;
-            uint requiredTakerZRX = isTakerTokenZRX ? safeAdd(fillTakerTokenAmount, paidTakerFee) : paidTakerFee;
+            uint requiredMakerWETH = isMakerTokenWETH ? safeAdd(fillMakerTokenAmount, paidMakerFee) : paidMakerFee;
+            uint requiredTakerWETH = isTakerTokenWETH ? safeAdd(fillTakerTokenAmount, paidTakerFee) : paidTakerFee;
 
-            if (   getBalance(ZRX_TOKEN_CONTRACT, order.maker) < requiredMakerZRX
-                || getAllowance(ZRX_TOKEN_CONTRACT, order.maker) < requiredMakerZRX
-                || getBalance(ZRX_TOKEN_CONTRACT, taker) < requiredTakerZRX
-                || getAllowance(ZRX_TOKEN_CONTRACT, taker) < requiredTakerZRX
+            if (   getBalance(WETH_TOKEN_CONTRACT, order.maker) < requiredMakerWETH
+                || getAllowance(WETH_TOKEN_CONTRACT, order.maker) < requiredMakerWETH
+                || getBalance(WETH_TOKEN_CONTRACT, taker) < requiredTakerWETH
+                || getAllowance(WETH_TOKEN_CONTRACT, taker) < requiredTakerWETH
             ) return false;
 
-            if (!isMakerTokenZRX && (   getBalance(order.makerToken, order.maker) < fillMakerTokenAmount // Don't double check makerToken if ZRX
+            if (!isMakerTokenWETH && (   getBalance(order.makerToken, order.maker) < fillMakerTokenAmount // Don't double check makerToken if WETH
                                      || getAllowance(order.makerToken, order.maker) < fillMakerTokenAmount)
             ) return false;
-            if (!isTakerTokenZRX && (   getBalance(order.takerToken, taker) < fillTakerTokenAmount // Don't double check takerToken if ZRX
+            if (!isTakerTokenWETH && (   getBalance(order.takerToken, taker) < fillTakerTokenAmount // Don't double check takerToken if WETH
                                      || getAllowance(order.takerToken, taker) < fillTakerTokenAmount)
             ) return false;
         } else if (   getBalance(order.makerToken, order.maker) < fillMakerTokenAmount
