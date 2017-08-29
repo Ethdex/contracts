@@ -14,6 +14,7 @@ const {
   Exchange,
   TokenTransferProxy,
   DummyToken,
+  EtherToken,
   TokenRegistry,
 } = new Artifacts(artifacts);
 
@@ -25,12 +26,14 @@ contract('Exchange', (accounts: string[]) => {
   const taker = accounts[1] || accounts[accounts.length - 1];
   const feeRecipient = accounts[2] || accounts[accounts.length - 1];
 
+  const INITIAL_WETH_BALANCE = toSmallestUnits(10);
   const INIT_BAL = toSmallestUnits(10000);
   const INIT_ALLOW = toSmallestUnits(10000);
 
   let rep: ContractInstance;
   let dgd: ContractInstance;
-  let zrx: ContractInstance;
+  let edx: ContractInstance;
+  let weth: ContractInstance;
   let exchange: ContractInstance;
   let tokenRegistry: ContractInstance;
 
@@ -46,10 +49,11 @@ contract('Exchange', (accounts: string[]) => {
       Exchange.deployed(),
     ]);
     exWrapper = new ExchangeWrapper(exchange);
-    const [repAddress, dgdAddress, zrxAddress] = await Promise.all([
+    const [repAddress, dgdAddress, edxAddress, wethAddress] = await Promise.all([
       tokenRegistry.getTokenAddressBySymbol('REP'),
       tokenRegistry.getTokenAddressBySymbol('DGD'),
       tokenRegistry.getTokenAddressBySymbol('EDX'),
+      tokenRegistry.getTokenAddressBySymbol('WETH'),
     ]);
 
     const defaultOrderParams = {
@@ -65,12 +69,13 @@ contract('Exchange', (accounts: string[]) => {
     };
     orderFactory = new OrderFactory(defaultOrderParams);
 
-    [rep, dgd, zrx] = await Promise.all([
+    [rep, dgd, edx, weth] = await Promise.all([
       DummyToken.at(repAddress),
       DummyToken.at(dgdAddress),
-      DummyToken.at(zrxAddress),
+      DummyToken.at(edxAddress),
+      EtherToken.at(wethAddress),
     ]);
-    dmyBalances = new Balances([rep, dgd, zrx], [maker, taker, feeRecipient]);
+    dmyBalances = new Balances([rep, dgd, edx, weth], [maker, taker, feeRecipient]);
     await Promise.all([
       rep.approve(TokenTransferProxy.address, INIT_ALLOW, { from: maker }),
       rep.approve(TokenTransferProxy.address, INIT_ALLOW, { from: taker }),
@@ -80,10 +85,15 @@ contract('Exchange', (accounts: string[]) => {
       dgd.approve(TokenTransferProxy.address, INIT_ALLOW, { from: taker }),
       dgd.setBalance(maker, INIT_BAL, { from: tokenOwner }),
       dgd.setBalance(taker, INIT_BAL, { from: tokenOwner }),
-      zrx.approve(TokenTransferProxy.address, INIT_ALLOW, { from: maker }),
-      zrx.approve(TokenTransferProxy.address, INIT_ALLOW, { from: taker }),
-      zrx.setBalance(maker, INIT_BAL, { from: tokenOwner }),
-      zrx.setBalance(taker, INIT_BAL, { from: tokenOwner }),
+      edx.approve(TokenTransferProxy.address, INIT_ALLOW, { from: maker }),
+      edx.approve(TokenTransferProxy.address, INIT_ALLOW, { from: taker }),
+      edx.setBalance(maker, INIT_BAL, { from: tokenOwner }),
+      edx.setBalance(taker, INIT_BAL, { from: tokenOwner }),
+
+      weth.deposit({ from: maker, value: INITIAL_WETH_BALANCE }),
+      weth.deposit({ from: taker, value: INITIAL_WETH_BALANCE }),
+      weth.approve(TokenTransferProxy.address, INITIAL_WETH_BALANCE, { from: maker }),
+      weth.approve(TokenTransferProxy.address, INITIAL_WETH_BALANCE, { from: taker }),
     ]);
   });
 
@@ -110,14 +120,14 @@ contract('Exchange', (accounts: string[]) => {
                    sub(balances[maker][order.params.makerToken], fillMakerTokenAmount));
       assert.equal(newBalances[maker][order.params.takerToken],
                    add(balances[maker][order.params.takerToken], fillTakerTokenAmount));
-      assert.equal(newBalances[maker][zrx.address], sub(balances[maker][zrx.address], makerFee));
+      assert.equal(newBalances[maker][weth.address], sub(balances[maker][weth.address], makerFee));
       assert.equal(newBalances[taker][order.params.takerToken],
                    sub(balances[taker][order.params.takerToken], fillTakerTokenAmount));
       assert.equal(newBalances[taker][order.params.makerToken],
                    add(balances[taker][order.params.makerToken], fillMakerTokenAmount));
-      assert.equal(newBalances[taker][zrx.address], sub(balances[taker][zrx.address], takerFee));
-      assert.equal(newBalances[feeRecipient][zrx.address],
-                   add(balances[feeRecipient][zrx.address], add(makerFee, takerFee)));
+      assert.equal(newBalances[taker][weth.address], sub(balances[taker][weth.address], takerFee));
+      assert.equal(newBalances[feeRecipient][weth.address],
+                   add(balances[feeRecipient][weth.address], add(makerFee, takerFee)));
     });
 
     it('should throw if an order is expired', async () => {
@@ -173,11 +183,11 @@ contract('Exchange', (accounts: string[]) => {
           fillTakerTokenAmounts.push(fillTakerTokenAmount);
           balances[maker][makerToken] = sub(balances[maker][makerToken], fillMakerTokenAmount);
           balances[maker][takerToken] = add(balances[maker][takerToken], fillTakerTokenAmount);
-          balances[maker][zrx.address] = sub(balances[maker][zrx.address], makerFee);
+          balances[maker][weth.address] = sub(balances[maker][weth.address], makerFee);
           balances[taker][makerToken] = add(balances[taker][makerToken], fillMakerTokenAmount);
           balances[taker][takerToken] = sub(balances[taker][takerToken], fillTakerTokenAmount);
-          balances[taker][zrx.address] = sub(balances[taker][zrx.address], takerFee);
-          balances[feeRecipient][zrx.address] = add(balances[feeRecipient][zrx.address], add(makerFee, takerFee));
+          balances[taker][weth.address] = sub(balances[taker][weth.address], takerFee);
+          balances[feeRecipient][weth.address] = add(balances[feeRecipient][weth.address], add(makerFee, takerFee));
         });
 
         await exWrapper.batchFillOrdersAsync(orders, taker, { fillTakerTokenAmounts });
@@ -201,11 +211,11 @@ contract('Exchange', (accounts: string[]) => {
           fillTakerTokenAmounts.push(fillTakerTokenAmount);
           balances[maker][makerToken] = sub(balances[maker][makerToken], fillMakerTokenAmount);
           balances[maker][takerToken] = add(balances[maker][takerToken], fillTakerTokenAmount);
-          balances[maker][zrx.address] = sub(balances[maker][zrx.address], makerFee);
+          balances[maker][weth.address] = sub(balances[maker][weth.address], makerFee);
           balances[taker][makerToken] = add(balances[taker][makerToken], fillMakerTokenAmount);
           balances[taker][takerToken] = sub(balances[taker][takerToken], fillTakerTokenAmount);
-          balances[taker][zrx.address] = sub(balances[taker][zrx.address], takerFee);
-          balances[feeRecipient][zrx.address] = add(balances[feeRecipient][zrx.address], add(makerFee, takerFee));
+          balances[taker][weth.address] = sub(balances[taker][weth.address], takerFee);
+          balances[feeRecipient][weth.address] = add(balances[feeRecipient][weth.address], add(makerFee, takerFee));
         });
 
         await exWrapper.batchFillOrKillOrdersAsync(orders, taker, { fillTakerTokenAmounts });
@@ -248,14 +258,14 @@ contract('Exchange', (accounts: string[]) => {
                      sub(balances[maker][orders[0].params.makerToken], fillMakerTokenAmount));
         assert.equal(newBalances[maker][orders[0].params.takerToken],
                      add(balances[maker][orders[0].params.takerToken], fillTakerTokenAmount));
-        assert.equal(newBalances[maker][zrx.address], sub(balances[maker][zrx.address], makerFee));
+        assert.equal(newBalances[maker][weth.address], sub(balances[maker][weth.address], makerFee));
         assert.equal(newBalances[taker][orders[0].params.takerToken],
                      sub(balances[taker][orders[0].params.takerToken], fillTakerTokenAmount));
         assert.equal(newBalances[taker][orders[0].params.makerToken],
                      add(balances[taker][orders[0].params.makerToken], fillMakerTokenAmount));
-        assert.equal(newBalances[taker][zrx.address], sub(balances[taker][zrx.address], takerFee));
-        assert.equal(newBalances[feeRecipient][zrx.address],
-                     add(balances[feeRecipient][zrx.address], add(makerFee, takerFee)));
+        assert.equal(newBalances[taker][weth.address], sub(balances[taker][weth.address], takerFee));
+        assert.equal(newBalances[feeRecipient][weth.address],
+                     add(balances[feeRecipient][weth.address], add(makerFee, takerFee)));
       });
 
       it('should fill all orders if cannot fill entire fillTakerTokenAmount', async () => {
@@ -265,14 +275,14 @@ contract('Exchange', (accounts: string[]) => {
                                                          order.params.makerTokenAmount);
           balances[maker][order.params.takerToken] = add(balances[maker][order.params.takerToken],
                                                          order.params.takerTokenAmount);
-          balances[maker][zrx.address] = sub(balances[maker][zrx.address], order.params.makerFee);
+          balances[maker][weth.address] = sub(balances[maker][weth.address], order.params.makerFee);
           balances[taker][order.params.makerToken] = add(balances[taker][order.params.makerToken],
                                                          order.params.makerTokenAmount);
           balances[taker][order.params.takerToken] = sub(balances[taker][order.params.takerToken],
                                                          order.params.takerTokenAmount);
-          balances[taker][zrx.address] = sub(balances[taker][zrx.address], order.params.takerFee);
-          balances[feeRecipient][zrx.address] = add(
-            balances[feeRecipient][zrx.address], add(order.params.makerFee, order.params.takerFee),
+          balances[taker][weth.address] = sub(balances[taker][weth.address], order.params.takerFee);
+          balances[feeRecipient][weth.address] = add(
+            balances[feeRecipient][weth.address], add(order.params.makerFee, order.params.takerFee),
           );
         });
         await exWrapper.fillOrdersUpToAsync(orders, taker, { fillTakerTokenAmount });
@@ -284,7 +294,7 @@ contract('Exchange', (accounts: string[]) => {
       it('should throw when an order does not use the same takerToken', async () => {
         orders = await Promise.all([
           orderFactory.newSignedOrderAsync(),
-          orderFactory.newSignedOrderAsync({ takerToken: zrx.address }),
+          orderFactory.newSignedOrderAsync({ takerToken: weth.address }),
           orderFactory.newSignedOrderAsync(),
         ]);
 
