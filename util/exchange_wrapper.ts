@@ -110,7 +110,7 @@ export class ExchangeWrapper {
   public isValidSignatureAsync(order: Order) {
     const isValidSignature = this.exchange.isValidSignature(
       order.params.maker,
-      order.params.orderHashHex,
+      order.params.orderSignedHashHex,
       order.params.v,
       order.params.r,
       order.params.s,

@@ -72,6 +72,7 @@ export interface OrderParams {
   expirationTimestampInSec: BigNumber.BigNumber;
   salt: BigNumber.BigNumber;
   orderHashHex?: string;
+  orderSignedHashHex?: string;
   v?: number;
   r?: string;
   s?: string;

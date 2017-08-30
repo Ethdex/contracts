@@ -60,6 +60,7 @@ contract TokenSale is Ownable, SafeMath {
         bytes32 r;
         bytes32 s;
         bytes32 orderHash;
+        bytes32 orderSignedHash;
     }
 
     modifier saleNotInitialized() {
@@ -146,7 +147,8 @@ contract TokenSale is Ownable, SafeMath {
             v: v,
             r: r,
             s: s,
-            orderHash: exchange.getOrderHash(orderAddresses, orderValues)
+            orderHash: exchange.getOrderHash(orderAddresses, orderValues),
+            orderSignedHash: exchange.getOrderSignedHash(orderAddresses, orderValues)
         });
 
         require(order.taker == address(this));
@@ -156,7 +158,7 @@ contract TokenSale is Ownable, SafeMath {
 
         require(isValidSignature(
             order.maker,
-            order.orderHash,
+            order.orderSignedHash,
             v,
             r,
             s
