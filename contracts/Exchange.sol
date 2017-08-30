@@ -55,7 +55,7 @@ contract Exchange is SafeMath {
         uint paidMakerFee,
         uint paidTakerFee,
         bytes32 indexed tokens, // keccak256(makerToken, takerToken), allows subscribing to a token pair
-        bytes32 orderHash
+        bytes32 orderSignedHash
     );
 
     event LogCancel(
@@ -66,10 +66,10 @@ contract Exchange is SafeMath {
         uint cancelledMakerTokenAmount,
         uint cancelledTakerTokenAmount,
         bytes32 indexed tokens,
-        bytes32 orderHash
+        bytes32 orderSignedHash
     );
 
-    event LogError(uint8 indexed errorId, bytes32 indexed orderHash);
+    event LogError(uint8 indexed errorId, bytes32 indexed orderSignedHash);
 
     struct Order {
         address maker;
@@ -127,38 +127,38 @@ contract Exchange is SafeMath {
             takerFee: orderValues[3],
             expirationTimestampInSec: orderValues[4],
             orderHash: getOrderHash(orderAddresses, orderValues),
-            orderSignedHash: getOrderHash(orderAddresses, orderValues)
+            orderSignedHash: getOrderSignedHash(orderAddresses, orderValues)
         });
 
         require(order.taker == address(0) || order.taker == msg.sender);
         require(order.makerTokenAmount > 0 && order.takerTokenAmount > 0 && fillTakerTokenAmount > 0);
         require(isValidSignature(
             order.maker,
-            order.orderHash,
+            order.orderSignedHash,
             v,
             r,
             s
         ));
 
         if (block.timestamp >= order.expirationTimestampInSec) {
-            LogError(uint8(Errors.ORDER_EXPIRED), order.orderHash);
+            LogError(uint8(Errors.ORDER_EXPIRED), order.orderSignedHash);
             return 0;
         }
 
         uint remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
         filledTakerTokenAmount = min256(fillTakerTokenAmount, remainingTakerTokenAmount);
         if (filledTakerTokenAmount == 0) {
-            LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
+            LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderSignedHash);
             return 0;
         }
 
         if (isRoundingError(filledTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount)) {
-            LogError(uint8(Errors.ROUNDING_ERROR_TOO_LARGE), order.orderHash);
+            LogError(uint8(Errors.ROUNDING_ERROR_TOO_LARGE), order.orderSignedHash);
             return 0;
         }
 
         if (!shouldThrowOnInsufficientBalanceOrAllowance && !isTransferable(order, filledTakerTokenAmount)) {
-            LogError(uint8(Errors.INSUFFICIENT_BALANCE_OR_ALLOWANCE), order.orderHash);
+            LogError(uint8(Errors.INSUFFICIENT_BALANCE_OR_ALLOWANCE), order.orderSignedHash);
             return 0;
         }
 
@@ -210,7 +210,7 @@ contract Exchange is SafeMath {
             paidMakerFee,
             paidTakerFee,
             keccak256(order.makerToken, order.takerToken),
-            order.orderHash
+            order.orderSignedHash
         );
         return filledTakerTokenAmount;
     }
@@ -239,21 +239,21 @@ contract Exchange is SafeMath {
             takerFee: orderValues[3],
             expirationTimestampInSec: orderValues[4],
             orderHash: getOrderHash(orderAddresses, orderValues),
-            orderSignedHash: getOrderHash(orderAddresses, orderValues)
+            orderSignedHash: getOrderSignedHash(orderAddresses, orderValues)
         });
 
         require(order.maker == msg.sender);
         require(order.makerTokenAmount > 0 && order.takerTokenAmount > 0 && cancelTakerTokenAmount > 0);
 
         if (block.timestamp >= order.expirationTimestampInSec) {
-            LogError(uint8(Errors.ORDER_EXPIRED), order.orderHash);
+            LogError(uint8(Errors.ORDER_EXPIRED), order.orderSignedHash);
             return 0;
         }
 
         uint remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
         uint cancelledTakerTokenAmount = min256(cancelTakerTokenAmount, remainingTakerTokenAmount);
         if (cancelledTakerTokenAmount == 0) {
-            LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
+            LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderSignedHash);
             return 0;
         }
 
@@ -267,7 +267,7 @@ contract Exchange is SafeMath {
             getPartialAmount(cancelledTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount),
             cancelledTakerTokenAmount,
             keccak256(order.makerToken, order.takerToken),
-            order.orderHash
+            order.orderSignedHash
         );
         return cancelledTakerTokenAmount;
     }
@@ -437,7 +437,6 @@ contract Exchange is SafeMath {
             orderAddresses[1], // taker
             orderAddresses[2], // makerToken
             orderAddresses[3], // takerToken
-            orderAddresses[4], // feeRecipient # Deprecated
             orderValues[0],    // makerTokenAmount
             orderValues[1],    // takerTokenAmount
             orderValues[2],    // makerFee

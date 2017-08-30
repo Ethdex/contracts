@@ -348,7 +348,7 @@ contract('Exchange', (accounts: string[]) => {
       assert.equal(expectedFeeMPaid.toString(), logArgs.paidMakerFee.toString());
       assert.equal(expectedFeeTPaid.toString(), logArgs.paidTakerFee.toString());
       assert.equal(expectedTokens, logArgs.tokens);
-      assert.equal(order.params.orderHashHex, logArgs.orderHash);
+      assert.equal(order.params.orderSignedHashHex, logArgs.orderSignedHash);
     });
 
     it('should log 1 event with the correct arguments when order has no feeRecipient', async () => {
@@ -378,7 +378,7 @@ contract('Exchange', (accounts: string[]) => {
       assert.equal(expectedFeeMPaid.toString(), logArgs.paidMakerFee.toString());
       assert.equal(expectedFeeTPaid.toString(), logArgs.paidTakerFee.toString());
       assert.equal(expectedTokens, logArgs.tokens);
-      assert.equal(order.params.orderHashHex, logArgs.orderHash);
+      assert.equal(order.params.orderSignedHashHex, logArgs.orderSignedHash);
     });
 
     it('should throw when taker is specified and order is claimed by other', async () => {
@@ -750,7 +750,7 @@ contract('Exchange', (accounts: string[]) => {
       assert.equal(expectedCancelledMakerTokenAmount.toString(), logArgs.cancelledMakerTokenAmount.toString());
       assert.equal(expectedCancelledTakerTokenAmount.toString(), logArgs.cancelledTakerTokenAmount.toString());
       assert.equal(expectedTokens, logArgs.tokens);
-      assert.equal(order.params.orderHashHex, logArgs.orderHash);
+      assert.equal(order.params.orderSignedHashHex, logArgs.orderSignedHash);
     });
 
     it('should not log events if no value is cancelled', async () => {

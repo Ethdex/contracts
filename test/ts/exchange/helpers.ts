@@ -64,6 +64,9 @@ contract('Exchange', (accounts: string[]) => {
 
     it('should return true with a valid signature', async () => {
       const success = await exchangeWrapper.isValidSignatureAsync(order);
+      console.log(success)
+      console.log(order.isValidSignature())
+      console.log(order)
       const isValidSignature = order.isValidSignature();
       assert(isValidSignature);
       assert(success);

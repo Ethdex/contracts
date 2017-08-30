@@ -20,8 +20,8 @@ export class Order {
     if (_.isUndefined(v) || _.isUndefined(r) || _.isUndefined(s)) {
       throw new Error('Cannot call isValidSignature on unsigned order');
     }
-    const orderHash = this.getOrderHash();
-    const msgHash = ethUtil.hashPersonalMessage(orderHash);
+    const orderSignedHash = this.getOrderSignedHash();
+    const msgHash = ethUtil.hashPersonalMessage(orderSignedHash);
     try {
       const pubKey = ethUtil.ecrecover(msgHash, v, ethUtil.toBuffer(r), ethUtil.toBuffer(s));
       const recoveredAddress = ethUtil.bufferToHex(ethUtil.pubToAddress(pubKey));
@@ -32,10 +32,12 @@ export class Order {
   }
   public async signAsync() {
     const orderHash = this.getOrderHash();
-    const signature = await promisify(web3Instance.eth.sign)(this.params.maker, ethUtil.bufferToHex(orderHash));
+    const orderSignedHash = this.getOrderSignedHash();
+    const signature = await promisify(web3Instance.eth.sign)(this.params.maker, ethUtil.bufferToHex(orderSignedHash));
     const { v, r, s } = ethUtil.fromRpcSig(signature);
     this.params = _.assign(this.params, {
       orderHashHex: ethUtil.bufferToHex(orderHash),
+      orderSignedHashHex: ethUtil.bufferToHex(orderSignedHash),
       v,
       r: ethUtil.bufferToHex(r),
       s: ethUtil.bufferToHex(s),
@@ -94,7 +96,6 @@ export class Order {
       this.params.taker,
       this.params.makerToken,
       this.params.takerToken,
-      this.params.feeRecipient,
       this.params.makerTokenAmount,
       this.params.takerTokenAmount,
       this.params.makerFee,
@@ -103,5 +104,23 @@ export class Order {
       this.params.salt,
     ]);
     return orderHash;
+  }
+
+  private getOrderSignedHash() {
+    const orderSignedHash = crypto.solSHA3([
+      this.params.exchangeContractAddress,
+      this.params.maker,
+      this.params.taker,
+      this.params.makerToken,
+      this.params.takerToken,
+      this.params.feeRecipient,
+      this.params.makerTokenAmount,
+      this.params.takerTokenAmount,
+      this.params.makerFee,
+      this.params.takerFee,
+      this.params.expirationTimestampInSec,
+      this.params.salt,
+    ]);
+    return orderSignedHash;
   }
 }
